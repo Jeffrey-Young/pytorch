@@ -75,6 +75,7 @@ from torch.testing._internal.common_device_type import (
 from torch.testing._internal.common_dtype import all_types_complex_float8_and
 from torch.testing._internal.common_utils import (
     expectedIfCppFakeTensor,
+    HardwareClassification,
     instantiate_parametrized_tests,
     IS_LINUX,
     parametrize,
@@ -156,6 +157,8 @@ class _TestFakeTensorHelpers:
 
 
 class TestFakeTensor(_TestFakeTensorHelpers, TestCase):
+    hw_classification = HardwareClassification.GENERIC
+
     def test_fake_mode_dispatch_api(self):
         mode = FakeTensorMode()
         mode_key = torch._C._TorchDispatchModeKey.FAKE
@@ -2401,6 +2404,8 @@ class TestFakeTensorDevice(_TestFakeTensorHelpers, TestCase):
     are therefore marked ``@onlyAccelerator``; the rest also run on cpu.
     """
 
+    hw_classification = HardwareClassification.ACCELERATOR
+
     @onlyAccelerator
     def test_accelerator_initialized(self, device):
         # doesn't error
@@ -2816,6 +2821,8 @@ instantiate_device_type_tests(
 
 
 class TestFakeTensorConstHandling(TestCase):
+    hw_classification = HardwareClassification.GENERIC
+
     def assertConst(self, *args):
         for arg in args:
             self.assertTrue(maybe_get_fake_constant(arg) is not None)
@@ -2918,6 +2925,8 @@ def contains_type(type: torch.Type, maybe_contained_type: torch.Type):
 
 
 class TestFakeTensorOpInfoDevice(TestCase):
+    hw_classification = HardwareClassification.ACCELERATOR
+
     @ops(custom_op_db, dtypes=OpDTypes.any_one)
     def test_fake(self, device, dtype, op):
         sample_inputs_itr = op.sample_inputs(device, dtype, requires_grad=False)
@@ -2942,6 +2951,8 @@ instantiate_device_type_tests(
 
 
 class TestFakeTensorConverter(TestCase):
+    hw_classification = HardwareClassification.GENERIC
+
     def test_memoized_conversion_to_meta(self):
         x = torch.rand(2, 2, 2)
         mode = FakeTensorMode()
@@ -3224,6 +3235,8 @@ make_propagate_real_tensors_cls(TestFakeTensorConverter)
 
 
 class TestFakeTensorOperatorInvariants(TestCase):
+    hw_classification = HardwareClassification.GENERIC
+
     def get_aten_op(self, schema):
         namespace, name = schema.name.split("::")
         overload = schema.overload_name if schema.overload_name else "default"
@@ -3496,6 +3509,8 @@ make_propagate_real_tensors_cls(TestFakeTensorOperatorInvariants)
 class TestFakeTensorOperatorInvariantsDevice(TestCase):
     """Accelerator-only TestFakeTensorOperatorInvariants cases (see only_for below)."""
 
+    hw_classification = HardwareClassification.ACCELERATOR
+
     @skipXPUIf(
         True,
         "MetadataMismatchError, see https://github.com/intel/torch-xpu-ops/issues/2802",
@@ -3622,6 +3637,8 @@ instantiate_device_type_tests(
 
 
 class TestFakeTensorProp(TestCase):
+    hw_classification = HardwareClassification.GENERIC
+
     def test_fake_tensor_prop_on_nn_module(self):
         class ToyNnModuleWithParameters(torch.nn.Module):
             def __init__(self) -> None:
@@ -3816,6 +3833,8 @@ make_propagate_real_tensors_cls(TestFakeTensorProp)
 class TestFakeTensorPropDevice(TestCase):
     """Accelerator-only TestFakeTensorProp cases (see only_for below)."""
 
+    hw_classification = HardwareClassification.ACCELERATOR
+
     def test_torch_load_with_fake_mode(self, device):
         model = torch.nn.Linear(5, 10)
         sd = model.state_dict()
@@ -3913,6 +3932,8 @@ instantiate_device_type_tests(
 
 
 class TestFakeTensorSerialization(TestCase):
+    hw_classification = HardwareClassification.GENERIC
+
     def test_serialization(self):
         x = torch.tensor([0], device="cpu")
         with FakeTensorMode():
@@ -3971,6 +3992,8 @@ class _TestFakeTensorDispatchCacheHelpers:
 # The dispatch cache is a Python FakeTensorMode feature with no C++ equivalent.
 @skipIfCppFakeTensor("no Python dispatch cache support")
 class TestFakeTensorDispatchCache(_TestFakeTensorDispatchCacheHelpers, TestCase):
+    hw_classification = HardwareClassification.GENERIC
+
     def test_shape_env_settings(self):
         """
         Validation that any boolean settings in ShapeEnv are present in the
@@ -4934,6 +4957,8 @@ instantiate_parametrized_tests(TestFakeTensorDispatchCache)
 class TestFakeTensorDispatchCacheDevice(_TestFakeTensorDispatchCacheHelpers, TestCase):
     """Accelerator-only TestFakeTensorDispatchCache cases (see only_for below)."""
 
+    hw_classification = HardwareClassification.ACCELERATOR
+
     def test_cache_key_device(self, device):
         with FakeTensorMode() as fm:
             x = torch.randn(4, 3)
@@ -5039,6 +5064,8 @@ instantiate_device_type_tests(
 
 
 class TestFakeTensorPreferDeviceType(TestCase):
+    hw_classification = HardwareClassification.GENERIC
+
     def test_fake_tensor_prefer_device_type_cpu_only(self):
         """
         Test that fake_tensor_prefer_device_type works correctly when only CPU tensors are involved.
@@ -5057,6 +5084,8 @@ class TestFakeTensorPreferDeviceType(TestCase):
 
 class TestFakeTensorPreferDeviceTypeDevice(TestCase):
     """Accelerator-only TestFakeTensorPreferDeviceType cases (see only_for below)."""
+
+    hw_classification = HardwareClassification.ACCELERATOR
 
     def test_fake_tensor_prefer_device_type(self, device):
         """
@@ -5132,6 +5161,8 @@ instantiate_device_type_tests(
 
 
 class TestFakeTensorMetaDevicePropagationDevice(TestCase):
+    hw_classification = HardwareClassification.ACCELERATOR
+
     def test_inplace_add_with_meta_rhs_keeps_destination_device(self, device):
         with FakeTensorMode():
             log_det = torch.zeros(2, device=device)
@@ -5150,6 +5181,8 @@ instantiate_device_type_tests(
 
 
 class TestFakeTensorViewCopy(TestCase):
+    hw_classification = HardwareClassification.GENERIC
+
     def test_expand_then_view_copy_matches_eager_mode(self):
         x = torch.arange(7)
         y = x.expand(12, 7)
