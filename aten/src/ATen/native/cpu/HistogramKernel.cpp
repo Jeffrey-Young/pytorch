@@ -26,6 +26,21 @@ namespace {
 
 constexpr int64_t HISTOGRAM_GRAIN_SIZE = 200;
 
+/* Linear interpolation in algorithm below may overflow for c10::Half.
+ * In that case cast intermediate values to float to prevent that.
+ */
+template <typename T>
+struct hist_linear_index_t
+{
+    typedef T type;
+};
+
+template <>
+struct hist_linear_index_t<c10::Half>
+{
+    typedef float type;
+};
+
 /* The main algorithm. Expects that the input tensor has shape (N, D).
  * Expects that bin_edges contains D one-dimensional tensors, each specifying
  * an increasing sequences of bin edges.
@@ -166,9 +181,9 @@ void histogramdd_cpu_contiguous(Tensor& hist, const TensorList& bin_edges,
                     /* When bin_edges is known to be a linear progression, maps elt to
                      * the appropriate bin via simple division.
                      */
-                    pos = static_cast<int64_t>((elt - leftmost_edge[dim])
-                            * (num_bin_edges[dim] - 1)
-                            / (rightmost_edge[dim] - leftmost_edge[dim]));
+                    pos = static_cast<int64_t>((static_cast<hist_linear_index_t<input_t>::type>(elt) - static_cast<hist_linear_index_t<input_t>::type>(leftmost_edge[dim]))
+                            * (static_cast<hist_linear_index_t<input_t>::type>(num_bin_edges[dim]) - 1)
+                            / (static_cast<hist_linear_index_t<input_t>::type>(rightmost_edge[dim]) - static_cast<hist_linear_index_t<input_t>::type>(leftmost_edge[dim])));
 
                     /* Ensures consistency with bin_edges by checking the bins to the left and right
                      * of the selected position. Necessary for cases in which an element very close
