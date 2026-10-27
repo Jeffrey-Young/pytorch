@@ -7497,7 +7497,7 @@ def scaled_grouped_mm(
     ``use_fast_accum=False``.
 
     Packed MNxK4 scaling requires CUDA 13.4 or later on SM10.x/SM11.x and accepts bfloat16,
-    float16, and float32 outputs. NVFP4 on the cuBLASLt backend has the same requirements
+    float16, and float32 outputs. NVFP4 and MXFP8 on the cuBLASLt backend have the same requirements
     and output dtypes; the MSLK backend requires bfloat16 output. Other recipes require bfloat16 output.
 
     Args:
