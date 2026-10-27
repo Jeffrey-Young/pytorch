@@ -7494,7 +7494,10 @@ def scaled_grouped_mm(
     shape ``(groups, values_per_group)``; a 2D operand concatenates the flattened group scales
     in offset order, covering only the groups selected by ``offs``. M and N must be multiples
     of 4. These recipes support bfloat16, float16, and float32 outputs and require
-    ``use_fast_accum=False``. Other scaling recipes require bfloat16 output.
+    ``use_fast_accum=False``.
+
+    Packed MNxK4 scaling requires CUDA 13.4 or later on SM10.x/SM11.x and accepts bfloat16,
+    float16, and float32 outputs. Other scaling recipes require bfloat16 output.
 
     Args:
         scale_a: Tensor containing decoding scaling factors for mat_a
@@ -7505,7 +7508,7 @@ def scaled_grouped_mm(
         swizzle_b: Enum describing the swizzling pattern (if any) of scale_b
         bias: optional bias term to be added to the output
         offs: optional offsets into the source tensors denoting group start indices
-        output_dtype: output dtype; TensorWise and Hopper block scaling accept bfloat16, float16, or float32,
+        output_dtype: output dtype; cuBLASLt recipes accept bfloat16, float16, or float32,
           other recipes require bfloat16
         contraction_dim: describe which dimensions are :math:`K` in the matmul.
         use_fast_accum: enable/disable tensor-core fast accumulation (Hopper-GPUs only)
