@@ -51,14 +51,19 @@ class Parameter(torch.Tensor, metaclass=_ParameterMeta):
     def __new__(cls, data=None, requires_grad=True):
         if data is None:
             data = torch.empty(0)
-        if type(data) is torch.Tensor or type(data) is Parameter:
+        if (
+            type(data) is torch.Tensor or type(data) is Parameter
+        ) and not torch._C._is_fake_tensor(data):
             # For ease of BC maintenance, keep this path for standard Tensor.
             # Eventually (tm), we should change the behavior for standard Tensor to match.
             return torch.Tensor._make_subclass(cls, data, requires_grad)
 
         # Path for custom tensors: set a flag on the instance to indicate parameter-ness.
         t = data.detach().requires_grad_(requires_grad)
-        if type(t) is not type(data):
+        # detach() on a C++ fake Parameter returns a plain Tensor, which gets the
+        # marker below.
+        cpp_fake_param = type(data) is Parameter and torch._C._is_fake_tensor(data)
+        if type(t) is not type(data) and not cpp_fake_param:
             raise RuntimeError(
                 f"Creating a Parameter from an instance of type {type(data).__name__} "
                 "requires that detach() returns an instance of the same type, but return "
