@@ -477,6 +477,10 @@ def maybe_get_fake_pytype(x: object) -> type[Tensor] | None:
         if x.pytype is not None:
             return x.pytype
         return torch.nn.Parameter if isinstance(x, torch.nn.Parameter) else Tensor
+    if isinstance(x, Tensor) and torch._C._is_fake_tensor(x):
+        # A C++ fake's own type is the real type, but a C++ fake Parameter can
+        # be a plain Tensor carrying the marker.
+        return torch.nn.Parameter if isinstance(x, torch.nn.Parameter) else type(x)
     return None
 
 
