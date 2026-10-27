@@ -7497,7 +7497,8 @@ def scaled_grouped_mm(
     ``use_fast_accum=False``.
 
     Packed MNxK4 scaling requires CUDA 13.4 or later on SM10.x/SM11.x and accepts bfloat16,
-    float16, and float32 outputs. Other scaling recipes require bfloat16 output.
+    float16, and float32 outputs. NVFP4 on the cuBLASLt backend has the same requirements
+    and output dtypes; the MSLK backend requires bfloat16 output. Other recipes require bfloat16 output.
 
     Args:
         scale_a: Tensor containing decoding scaling factors for mat_a
