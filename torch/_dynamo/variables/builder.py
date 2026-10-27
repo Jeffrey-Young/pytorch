@@ -249,9 +249,11 @@ from .functions import (
     CollectiveFunctionRewriteVariable,
     CreateTMADescriptorExperimentalVariable,
     CreateTMADescriptorStableVariable,
+    FunctionWrapperVariable,
     FunctoolsPartialVariable,
     GetSetDescriptorVariable,
     LocalGeneratorFunctionVariable,
+    LruCacheWrapperVariable,
     MemberDescriptorVariable,
     MethodDescriptorVariable,
     MethodWrapperVariable,
@@ -2011,7 +2013,7 @@ class VariableBuilder:
             "__script_if_tracing_wrapper", False
         ):
             self.install_guards(GuardBuilder.TYPE_MATCH)
-            return WrapperUserFunctionVariable(
+            return FunctionWrapperVariable(
                 value,
                 "__original_fn",
                 source=self.source,
@@ -2019,7 +2021,7 @@ class VariableBuilder:
             )
         elif is_lru_cache_wrapped_function(value):
             self.install_guards(GuardBuilder.TYPE_MATCH)
-            return WrapperUserFunctionVariable(
+            return LruCacheWrapperVariable(
                 value,
                 "__wrapped__",
                 source=self.source,
@@ -2033,7 +2035,12 @@ class VariableBuilder:
             value, "_torchdynamo_inline", False
         ):
             self.install_guards(GuardBuilder.TYPE_MATCH)
-            return WrapperUserFunctionVariable(
+            wrapper_cls = (
+                FunctionWrapperVariable
+                if isinstance(value, types.FunctionType)
+                else WrapperUserFunctionVariable
+            )
+            return wrapper_cls(
                 value,
                 "_torchdynamo_inline",
                 source=self.source,
