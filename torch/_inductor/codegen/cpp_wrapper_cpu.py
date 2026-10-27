@@ -1497,6 +1497,14 @@ class CppWrapperCpu(PythonWrapperCodegen):
             self.prefix.writeline(
                 "this->kernels_ = std::make_unique<AOTInductorModelKernels>();"
             )
+            if config.aot_inductor.cudagraphs:
+                self.prefix.writeline("this->cudagraphs_ = true;")
+                max_graphs = config.aot_inductor.cudagraphs_max_graphs
+                if max_graphs < 0:
+                    raise ValueError(
+                        f"aot_inductor.cudagraphs_max_graphs must be non-negative, got {max_graphs}"
+                    )
+                self.prefix.writeline(f"this->cudagraphs_max_graphs_ = {max_graphs};")
 
         self.prefix.writeline("}")
 
